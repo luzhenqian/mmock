@@ -183,7 +183,7 @@ app.put("/requests", (req, res) => {
       );
       addApi(method, url, body);
       res.statusCode = 200;
-      res.send(jsonToString({ message: "request successfully created" }));
+      res.send(jsonToString({ message: "request successfully updated" }));
     })
     .catch((err) => {
       console.log("request create error:", err);
@@ -275,6 +275,7 @@ async function initAllApi() {
 function addApi(method, url, body) {
   const methods = ["get", "put", "post", "delete"];
   if (methods.includes(method)) {
+    removeApi(method, url)
     app[method](url, (req, res) => {
       try {
         eval(`var data = ${body}`);
@@ -291,10 +292,20 @@ function jsonToString(dataString) {
   return JSON.stringify(dataString);
 }
 
+function removeApi(method, url) {
+  const routes = app._router.stack;
+  routes.forEach((route, i) => {
+    if(route.route && route.route.path === url && route.route.methods[method] === true) {
+      routes.splice(i, 1);
+    }
+  })
+}
+
 initConnect().then(() => {
   initAllApi().then((result) => {
     app.listen(port, () => {
       console.log(`Example app listening on port ${port}`);
+      // removeApi('post', '/requests')
     });
   });
 });
