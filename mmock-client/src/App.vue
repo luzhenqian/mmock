@@ -188,13 +188,11 @@
 import { onMounted, reactive, ref } from "vue";
 // import Prism Editor
 import { PrismEditor } from "vue-prism-editor";
-import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
-
-// import highlighting library (you can use any library you want just return html string)
+import "vue-prism-editor/dist/prismeditor.min.css";
 import { highlight, languages } from "prismjs/components/prism-core";
 import "prismjs/components/prism-clike";
 import "prismjs/components/prism-javascript";
-import "prismjs/themes/prism-tomorrow.css"; // import syntax highlighting styles
+import "prismjs/themes/prism-tomorrow.css";
 import { useToast } from "primevue/usetoast";
 const defaultBody = `{
   "key": "value" 
@@ -226,11 +224,11 @@ const serviceContextMenu = [
     },
   },
   { label: "重命名", icon: "pi pi-fw pi-inbox" },
-  { label: "删除项目", icon: "pi pi-fw pi-inbox" },
+  { label: "删除服务", icon: "pi pi-fw pi-inbox", onClick: deleteService },
 ];
 const requestContextMenu = [
   { label: "重命名", icon: "pi pi-fw pi-inbox" },
-  { label: "删除项目", icon: "pi pi-fw pi-inbox" },
+  { label: "删除接口", icon: "pi pi-fw pi-inbox", onClick: deleteRequest },
 ];
 
 const display = ref(false);
@@ -325,6 +323,50 @@ async function deleteProject() {
     const { message } = await data.json();
     toast.add({ severity: "info", summary: message, life: 3000 });
     projectContextMenuRef.value.hide();
+
+    getProjectsData();
+  }
+}
+
+async function deleteService() {
+  const data = await fetch(
+    "http://localhost:3333/services/",
+    {
+      method: "delete",
+      body: JSON.stringify({
+        projectName: projectName.value,
+        serviceName: serviceName.value,
+      }),
+      headers: { "Content-Type": "application/json" },
+    }
+  );
+  if (data.ok) {
+    const { message } = await data.json();
+    toast.add({ severity: "info", summary: message, life: 3000 });
+    serviceContextMenuRef.value.hide();
+
+    getProjectsData();
+  }
+}
+
+async function deleteRequest() {
+  console.log(curNodeData,'curNodeData')
+  const data = await fetch(
+    "http://localhost:3333/requests/",
+    {
+      method: "delete",
+      body: JSON.stringify({
+        projectName: curNodeData.projectName,
+        serviceName: curNodeData.serviceName,
+        requestName: curNodeData.key,
+      }),
+      headers: { "Content-Type": "application/json" },
+    }
+  );
+  if (data.ok) {
+    const { message } = await data.json();
+    toast.add({ severity: "info", summary: message, life: 3000 });
+    requestContextMenuRef.value.hide();
 
     getProjectsData();
   }

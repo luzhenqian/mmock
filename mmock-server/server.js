@@ -203,6 +203,61 @@ app.delete("/projects/:_id", async (req, res) => {
   }
 });
 
+app.delete("/services", async (req, res) => {
+  const { projectName, serviceName } = req.body;
+  const result = await appCollection.findOne({ name: projectName });
+  if (result === null) {
+    res.send(jsonToString({ message: "project is not available" }));
+    return;
+  }
+  const serviceIdx = result.services.findIndex(
+    (service) => service.name === serviceName
+  );
+  if (serviceIdx === -1) {
+    res.send(jsonToString({ message: "service is not available" }));
+    return;
+  }
+  result.services.splice(serviceIdx, 1);
+  const updateResult = await appCollection.updateOne(
+    { name: projectName },
+    { $set: { services: result.services } }
+  );
+  if(updateResult.modifiedCount === 1) {
+    res.send(jsonToString({message: "services is deleted successfully"}));
+  }
+});
+
+app.delete("/requests", async (req, res) => {
+  const { projectName, serviceName, requestName } = req.body;
+  const result = await appCollection.findOne({ name: projectName });
+  if (result === null) {
+    res.send(jsonToString({ message: "project is not available" }));
+    return;
+  }
+  const service = result.services.find(
+    (service) => service.name === serviceName
+  );
+  if (!service) {
+    res.send(jsonToString({ message: "service is not available" }));
+    return;
+  }
+  const requestIdx = service.requests.findIndex(
+    (request) => request.name === requestName
+  );
+  if (requestIdx === -1) {
+    res.send(jsonToString({ message: "request is not available" }));
+    return;
+  }
+  service.requests.splice(requestIdx, 1);
+  const updateResult = await appCollection.updateOne(
+    { name: projectName },
+    { $set: { services: result.services } }
+  );
+  if(updateResult.modifiedCount === 1) {
+    res.send(jsonToString({message: "requests is deleted successfully"}));
+  }
+});
+
 async function initAllApi() {
   const result = await getAllProjects(appCollection);
   const requests = [];
@@ -222,7 +277,7 @@ function addApi(method, url, body) {
   if (methods.includes(method)) {
     app[method](url, (req, res) => {
       try {
-        eval(`var data = ${body}`)
+        eval(`var data = ${body}`);
         const mockBody = Mock.mock(data);
         res.send(jsonToString(mockBody));
       } catch (err) {
